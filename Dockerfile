@@ -15,11 +15,10 @@ COPY server ./server
 ENV NODE_ENV=production
 ENV MUNINN_DATA_DIR=/data
 
-RUN mkdir -p /data && chown node:node /data
-
-# P2-12：不以 root 运行
-USER node
+# 启动阶段需要 root 来修正卷属主，装降权工具
+RUN apk add --no-cache su-exec
 
 EXPOSE 7300
 
-CMD ["node", "--import", "tsx", "server/http.ts"]
+# 以 root 启动 → 修正卷目录属主 → 降权到 node 跑服务
+CMD ["sh", "-c", "mkdir -p /data && chown -R node:node /data && exec su-exec node node --import tsx server/http.ts"]
